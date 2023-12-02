@@ -26,6 +26,9 @@ func (server *Server) getListVideo(ctx *gin.Context){
 		return
 	}
 
+	auth := ctx.GetHeader("Authorization")
+	fmt.Println(auth)
+
 	wildcard := "%"
 	// %% to search for all
 	search := wildcard + wildcard 
@@ -43,6 +46,7 @@ func (server *Server) getListVideo(ctx *gin.Context){
 	
 	video, err := server.store.ListVideosWithLikesAndSearch(ctx, arg)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 	ctx.JSON(http.StatusOK, video)
@@ -74,7 +78,6 @@ func (server *Server) getUserVideoList(ctx *gin.Context){
 		return
 	}
 
-	fmt.Println(req)
 	arg := db.GetUserVideoWithLikesParams{
 		UserID: req.UserID,
 		Limit: reqForm.Limit,
@@ -110,10 +113,49 @@ func (server *Server) getVideo(ctx *gin.Context){
 	
 	video, err := server.store.GetVideoWithLikes(ctx, req.ID)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 	ctx.JSON(http.StatusOK, video)
 
+}
+
+type updateVideoUriParams struct {
+    Id int64 `uri:"id" binding:"required"`
+}
+
+type updateVideoFormParams struct {
+    Title string `form:"title"`
+    Description string `form:"description"`
+}
+
+func (server *Server) updateVideo(ctx *gin.Context){
+	var reqUri updateVideoUriParams
+	var reqForm updateVideoFormParams
+
+	if err := ctx.ShouldBindUri(&reqUri); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	if err := ctx.ShouldBindJSON(&reqForm); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	video, err := server.store.GetVideo(ctx, reqUri.Id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	if !validateClaims(ctx, video.UserID){
+		return
+	}
+	
+
+	fmt.Println(video)
+
+	ctx.JSON(http.StatusOK, video)
 }
 
 // Define a struct to hold the result of an upload operation

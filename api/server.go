@@ -45,12 +45,14 @@ func NewServer(store db.Store) *Server {
 
 	v1 := router.Group("/api/v1")
 	{
-
 		/* VIDEOS */
 		v1.GET("/video/:id", server.getVideo)
 		v1.GET("/video", server.getListVideo)
 		v1.GET("/video/user/:user_id", server.getUserVideoList)
 		v1.POST("/video", authRequired(), server.createVideo)
+		v1.PUT("/video/:id", authRequired(), server.updateVideo)
+
+		/* USER */
 		v1.POST("/user", server.addUser)
 
 		/* COMMENTS */
@@ -75,6 +77,33 @@ func (server *Server) Start(address string) error {
 }
 
 
+func validateClaims(ctx *gin.Context, userID string) bool {
+	claims, exists := ctx.Get("claims")
+	if !exists {
+		ctx.JSON(http.StatusForbidden, "Claims not found in context")
+		return false
+	}	
+
+	claimsMap, ok := claims.(map[string]interface{})
+	if !ok {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "Invalid format for claims"})
+		return false
+	}
+
+	subClaim, ok := claimsMap["sub"].(string)
+	if !ok {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "Sub claim not found or not a string"})
+		return false
+	}
+
+	if subClaim != userID {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Only owners of this video can update"})
+		return false
+	}
+	
+	return true
+}
+
 func authRequired() gin.HandlerFunc {
     return func(c *gin.Context) {
 
@@ -83,13 +112,26 @@ func authRequired() gin.HandlerFunc {
         configuration := auth0.NewConfiguration(client, []string{audience}, auth0Domain, jose.RS256)
         validator := auth0.NewValidator(configuration, nil)
 
-        _, err := validator.ValidateRequest(c.Request)
+        token, err := validator.ValidateRequest(c.Request)
 
         if err != nil {
             log.Println(err)
             terminateWithError(http.StatusUnauthorized, "token is not valid", c)
             return
         }
+
+	claims := map[string]interface{}{}
+	err = validator.Claims(c.Request, token, &claims)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid claims"})
+		c.Abort()
+		log.Println("Invalid claims:", err)
+		return
+	}
+	
+
+	c.Set("claims", claims)
+
         c.Next()
     }
 }

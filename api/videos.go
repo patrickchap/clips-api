@@ -26,9 +26,6 @@ func (server *Server) getListVideo(ctx *gin.Context){
 		return
 	}
 
-	auth := ctx.GetHeader("Authorization")
-	fmt.Println(auth)
-
 	wildcard := "%"
 	// %% to search for all
 	search := wildcard + wildcard 
@@ -84,14 +81,11 @@ func (server *Server) getUserVideoList(ctx *gin.Context){
 		Offset: (reqForm.Limit-1)*reqForm.Offset,
 	}
 
-	fmt.Println(arg)
-
 	videos, err := server.store.GetUserVideoWithLikes(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-
 
 	ctx.JSON(http.StatusOK, videos)
 }
@@ -151,11 +145,21 @@ func (server *Server) updateVideo(ctx *gin.Context){
 	if !validateClaims(ctx, video.UserID){
 		return
 	}
-	
 
-	fmt.Println(video)
+	arg := db.UpdateVideoParams{
+		ID: video.ID,
+		Title: reqForm.Title,
+		Description: reqForm.Description,
+	}
 
-	ctx.JSON(http.StatusOK, video)
+
+	if err := server.store.UpdateVideo(ctx, arg); err != nil {
+		fmt.Printf("UpdateVideo error: %v\n", err)
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Video updated successfully"})
 }
 
 // Define a struct to hold the result of an upload operation

@@ -9,10 +9,16 @@ import (
 )
 
 type Querier interface {
+	CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error)
+	CreateLike(ctx context.Context, arg CreateLikeParams) (Like, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateVideo(ctx context.Context, arg CreateVideoParams) (Video, error)
+	DeleteCommentsByVideo(ctx context.Context, videoID int64) error
+	DeleteLikesByVideoAndUser(ctx context.Context, arg DeleteLikesByVideoAndUserParams) error
 	DeleteUser(ctx context.Context, id int64) error
 	DeleteVideo(ctx context.Context, id int64) error
+	GetCommentsByVideo(ctx context.Context, arg GetCommentsByVideoParams) ([]Comment, error)
+	GetLikesByVideo(ctx context.Context, arg GetLikesByVideoParams) ([]Like, error)
 	GetUser(ctx context.Context, id int64) (User, error)
 	GetUserVideoWithLikes(ctx context.Context, arg GetUserVideoWithLikesParams) ([]GetUserVideoWithLikesRow, error)
 	GetVideo(ctx context.Context, id int64) (Video, error)
@@ -21,6 +27,7 @@ type Querier interface {
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
 	ListVideos(ctx context.Context, arg ListVideosParams) ([]Video, error)
 	ListVideosWithLikesAndSearch(ctx context.Context, arg ListVideosWithLikesAndSearchParams) ([]ListVideosWithLikesAndSearchRow, error)
+	UpdateVideo(ctx context.Context, arg UpdateVideoParams) error
 }
 
 var _ Querier = (*Queries)(nil)

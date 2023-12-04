@@ -18,11 +18,14 @@ WHERE id = $1 LIMIT 1;
 -- name: GetVideoWithLikesWithSearch :one
 SELECT
     v.*,
-    COUNT(l.id) AS like_count
+    COUNT(l.id) AS like_count,
+    COUNT(c.id) AS comment_count
 FROM
     videos v
 LEFT JOIN
     likes l ON v.id = l.video_id
+LEFT JOIN
+    comments c on v.id = c.video_id
 WHERE
     v.id = $1
 GROUP BY
@@ -31,11 +34,14 @@ GROUP BY
 -- name: GetUserVideoWithLikes :many
 SELECT
     v.*,
-    COUNT(l.id) AS like_count
+    COUNT(l.id) AS like_count,
+    COUNT(c.id) AS comment_count
 FROM
     videos v
 LEFT JOIN
     likes l ON v.id = l.video_id
+LEFT JOIN
+    comments c on v.id = c.video_id
 WHERE
     v.user_id = sqlc.arg(user_id)::text
 GROUP BY
@@ -67,11 +73,14 @@ OFFSET $2;
 -- name: ListVideosWithLikesAndSearch :many
 SELECT
     v.*,
-    COUNT(l.id) AS like_count
+    COUNT(l.id) AS like_count,
+    COUNT(c.id) AS comment_count
 FROM
     videos v
 LEFT JOIN
     likes l ON v.id = l.video_id
+LEFT JOIN
+    comments c on v.id = c.video_id
 WHERE
     v.title ILIKE sqlc.arg(search)::text
 OR
@@ -83,6 +92,12 @@ ORDER BY
 
 LIMIT $1
 OFFSET $2;
+
+-- name: UpdateVideo :exec
+UPDATE videos 
+  set title = $2,
+  description = $3
+WHERE id = $1;
 
 -- name: DeleteVideo :exec
 DELETE FROM videos 

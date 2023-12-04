@@ -35,6 +35,36 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
+// CreateComment mocks base method.
+func (m *MockStore) CreateComment(arg0 context.Context, arg1 db.CreateCommentParams) (db.Comment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateComment", arg0, arg1)
+	ret0, _ := ret[0].(db.Comment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateComment indicates an expected call of CreateComment.
+func (mr *MockStoreMockRecorder) CreateComment(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateComment", reflect.TypeOf((*MockStore)(nil).CreateComment), arg0, arg1)
+}
+
+// CreateLike mocks base method.
+func (m *MockStore) CreateLike(arg0 context.Context, arg1 db.CreateLikeParams) (db.Like, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateLike", arg0, arg1)
+	ret0, _ := ret[0].(db.Like)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateLike indicates an expected call of CreateLike.
+func (mr *MockStoreMockRecorder) CreateLike(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateLike", reflect.TypeOf((*MockStore)(nil).CreateLike), arg0, arg1)
+}
+
 // CreateUser mocks base method.
 func (m *MockStore) CreateUser(arg0 context.Context, arg1 db.CreateUserParams) (db.User, error) {
 	m.ctrl.T.Helper()
@@ -65,6 +95,34 @@ func (mr *MockStoreMockRecorder) CreateVideo(arg0, arg1 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVideo", reflect.TypeOf((*MockStore)(nil).CreateVideo), arg0, arg1)
 }
 
+// DeleteCommentsByVideo mocks base method.
+func (m *MockStore) DeleteCommentsByVideo(arg0 context.Context, arg1 int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteCommentsByVideo", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteCommentsByVideo indicates an expected call of DeleteCommentsByVideo.
+func (mr *MockStoreMockRecorder) DeleteCommentsByVideo(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCommentsByVideo", reflect.TypeOf((*MockStore)(nil).DeleteCommentsByVideo), arg0, arg1)
+}
+
+// DeleteLikesByVideoAndUser mocks base method.
+func (m *MockStore) DeleteLikesByVideoAndUser(arg0 context.Context, arg1 db.DeleteLikesByVideoAndUserParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteLikesByVideoAndUser", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteLikesByVideoAndUser indicates an expected call of DeleteLikesByVideoAndUser.
+func (mr *MockStoreMockRecorder) DeleteLikesByVideoAndUser(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteLikesByVideoAndUser", reflect.TypeOf((*MockStore)(nil).DeleteLikesByVideoAndUser), arg0, arg1)
+}
+
 // DeleteUser mocks base method.
 func (m *MockStore) DeleteUser(arg0 context.Context, arg1 int64) error {
 	m.ctrl.T.Helper()
@@ -91,6 +149,36 @@ func (m *MockStore) DeleteVideo(arg0 context.Context, arg1 int64) error {
 func (mr *MockStoreMockRecorder) DeleteVideo(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteVideo", reflect.TypeOf((*MockStore)(nil).DeleteVideo), arg0, arg1)
+}
+
+// GetCommentsByVideo mocks base method.
+func (m *MockStore) GetCommentsByVideo(arg0 context.Context, arg1 db.GetCommentsByVideoParams) ([]db.Comment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCommentsByVideo", arg0, arg1)
+	ret0, _ := ret[0].([]db.Comment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCommentsByVideo indicates an expected call of GetCommentsByVideo.
+func (mr *MockStoreMockRecorder) GetCommentsByVideo(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommentsByVideo", reflect.TypeOf((*MockStore)(nil).GetCommentsByVideo), arg0, arg1)
+}
+
+// GetLikesByVideo mocks base method.
+func (m *MockStore) GetLikesByVideo(arg0 context.Context, arg1 db.GetLikesByVideoParams) ([]db.Like, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLikesByVideo", arg0, arg1)
+	ret0, _ := ret[0].([]db.Like)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLikesByVideo indicates an expected call of GetLikesByVideo.
+func (mr *MockStoreMockRecorder) GetLikesByVideo(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLikesByVideo", reflect.TypeOf((*MockStore)(nil).GetLikesByVideo), arg0, arg1)
 }
 
 // GetUser mocks base method.
@@ -211,4 +299,18 @@ func (m *MockStore) ListVideosWithLikesAndSearch(arg0 context.Context, arg1 db.L
 func (mr *MockStoreMockRecorder) ListVideosWithLikesAndSearch(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListVideosWithLikesAndSearch", reflect.TypeOf((*MockStore)(nil).ListVideosWithLikesAndSearch), arg0, arg1)
+}
+
+// UpdateVideo mocks base method.
+func (m *MockStore) UpdateVideo(arg0 context.Context, arg1 db.UpdateVideoParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateVideo", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateVideo indicates an expected call of UpdateVideo.
+func (mr *MockStoreMockRecorder) UpdateVideo(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVideo", reflect.TypeOf((*MockStore)(nil).UpdateVideo), arg0, arg1)
 }

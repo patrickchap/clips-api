@@ -20,7 +20,7 @@ CREATE TABLE videos (
 CREATE TABLE comments (
   id BIGSERIAL PRIMARY KEY,
   content varchar NOT NULL,
-  video_id bigint,
+  video_id bigint NOT NULL,
   user_id varchar(100) NOT NULL,
   created_at timestamp DEFAULT (CURRENT_TIMESTAMP)
 );

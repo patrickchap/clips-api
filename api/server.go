@@ -32,7 +32,6 @@ func NewServer(store db.Store) *Server {
 	audience = configEnv.Auth0Identifier
 	domain = configEnv.Auth0Domain
 
-
 	server := &Server{store: store}
 	router := gin.Default()	
 	router.SetTrustedProxies(nil)
@@ -47,7 +46,7 @@ func NewServer(store db.Store) *Server {
 	{
 		/* VIDEOS */
 		v1.GET("/video/:id", server.getVideo)
-		v1.GET("/video", server.getListVideo)
+		v1.GET("/video",server.getListVideo)
 		v1.GET("/video/user/:user_id", server.getUserVideoList)
 		v1.POST("/video", authRequired(), server.createVideo)
 		v1.PUT("/video/:id", authRequired(), server.updateVideo)
@@ -56,10 +55,10 @@ func NewServer(store db.Store) *Server {
 		v1.POST("/user", server.addUser)
 
 		/* COMMENTS */
-		/* v1.GET("/videos/:video_id/comments", server.)
-		v1.POST("/videos/:video_id/comments", server.)
-		v1.PUT("/videos/:video_id/comments/:comment_id", server.)
-		v1.DELETE("/videos/:video_id/comments/:comment_id", server.) */
+		v1.GET("/videos/:video_id/comments", server.getVideoComments)
+		v1.POST("/videos/:video_id/comments", authRequired(), server.addVideoComments)
+		v1.DELETE("/videos/:video_id/comments/:comment_id", server.deleteVideoComments)
+/* 		v1.PUT("/videos/:video_id/comments/:comment_id", server.) */
 
 		/* LIKES */
 		/* v1.GET("/videos/:video_id/likes", server.)

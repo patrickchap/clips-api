@@ -16,7 +16,7 @@ type Category struct {
 type Comment struct {
 	ID        int64            `json:"id"`
 	Content   string           `json:"content"`
-	VideoID   pgtype.Int8      `json:"video_id"`
+	VideoID   int64            `json:"video_id"`
 	UserID    string           `json:"user_id"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
 }

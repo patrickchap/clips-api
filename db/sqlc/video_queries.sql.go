@@ -66,11 +66,14 @@ func (q *Queries) DeleteVideo(ctx context.Context, id int64) error {
 const getUserVideoWithLikes = `-- name: GetUserVideoWithLikes :many
 SELECT
     v.id, v.title, v.description, v.file_url, v.thumbnail_url, v.user_id, v.created_at,
-    COUNT(l.id) AS like_count
+    COUNT(l.id) AS like_count,
+    COUNT(c.id) AS comment_count
 FROM
     videos v
 LEFT JOIN
     likes l ON v.id = l.video_id
+LEFT JOIN
+    comments c on v.id = c.video_id
 WHERE
     v.user_id = $3::text
 GROUP BY
@@ -96,6 +99,7 @@ type GetUserVideoWithLikesRow struct {
 	UserID       string           `json:"user_id"`
 	CreatedAt    pgtype.Timestamp `json:"created_at"`
 	LikeCount    int64            `json:"like_count"`
+	CommentCount int64            `json:"comment_count"`
 }
 
 func (q *Queries) GetUserVideoWithLikes(ctx context.Context, arg GetUserVideoWithLikesParams) ([]GetUserVideoWithLikesRow, error) {
@@ -116,6 +120,7 @@ func (q *Queries) GetUserVideoWithLikes(ctx context.Context, arg GetUserVideoWit
 			&i.UserID,
 			&i.CreatedAt,
 			&i.LikeCount,
+			&i.CommentCount,
 		); err != nil {
 			return nil, err
 		}
@@ -191,11 +196,14 @@ func (q *Queries) GetVideoWithLikes(ctx context.Context, id int64) (GetVideoWith
 const getVideoWithLikesWithSearch = `-- name: GetVideoWithLikesWithSearch :one
 SELECT
     v.id, v.title, v.description, v.file_url, v.thumbnail_url, v.user_id, v.created_at,
-    COUNT(l.id) AS like_count
+    COUNT(l.id) AS like_count,
+    COUNT(c.id) AS comment_count
 FROM
     videos v
 LEFT JOIN
     likes l ON v.id = l.video_id
+LEFT JOIN
+    comments c on v.id = c.video_id
 WHERE
     v.id = $1
 GROUP BY
@@ -211,6 +219,7 @@ type GetVideoWithLikesWithSearchRow struct {
 	UserID       string           `json:"user_id"`
 	CreatedAt    pgtype.Timestamp `json:"created_at"`
 	LikeCount    int64            `json:"like_count"`
+	CommentCount int64            `json:"comment_count"`
 }
 
 func (q *Queries) GetVideoWithLikesWithSearch(ctx context.Context, id int64) (GetVideoWithLikesWithSearchRow, error) {
@@ -225,6 +234,7 @@ func (q *Queries) GetVideoWithLikesWithSearch(ctx context.Context, id int64) (Ge
 		&i.UserID,
 		&i.CreatedAt,
 		&i.LikeCount,
+		&i.CommentCount,
 	)
 	return i, err
 }
@@ -272,11 +282,14 @@ func (q *Queries) ListVideos(ctx context.Context, arg ListVideosParams) ([]Video
 const listVideosWithLikesAndSearch = `-- name: ListVideosWithLikesAndSearch :many
 SELECT
     v.id, v.title, v.description, v.file_url, v.thumbnail_url, v.user_id, v.created_at,
-    COUNT(l.id) AS like_count
+    COUNT(l.id) AS like_count,
+    COUNT(c.id) AS comment_count
 FROM
     videos v
 LEFT JOIN
     likes l ON v.id = l.video_id
+LEFT JOIN
+    comments c on v.id = c.video_id
 WHERE
     v.title ILIKE $3::text
 OR
@@ -305,6 +318,7 @@ type ListVideosWithLikesAndSearchRow struct {
 	UserID       string           `json:"user_id"`
 	CreatedAt    pgtype.Timestamp `json:"created_at"`
 	LikeCount    int64            `json:"like_count"`
+	CommentCount int64            `json:"comment_count"`
 }
 
 func (q *Queries) ListVideosWithLikesAndSearch(ctx context.Context, arg ListVideosWithLikesAndSearchParams) ([]ListVideosWithLikesAndSearchRow, error) {
@@ -325,6 +339,7 @@ func (q *Queries) ListVideosWithLikesAndSearch(ctx context.Context, arg ListVide
 			&i.UserID,
 			&i.CreatedAt,
 			&i.LikeCount,
+			&i.CommentCount,
 		); err != nil {
 			return nil, err
 		}
@@ -334,4 +349,22 @@ func (q *Queries) ListVideosWithLikesAndSearch(ctx context.Context, arg ListVide
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateVideo = `-- name: UpdateVideo :exec
+UPDATE videos 
+  set title = $2,
+  description = $3
+WHERE id = $1
+`
+
+type UpdateVideoParams struct {
+	ID          int64  `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+}
+
+func (q *Queries) UpdateVideo(ctx context.Context, arg UpdateVideoParams) error {
+	_, err := q.db.Exec(ctx, updateVideo, arg.ID, arg.Title, arg.Description)
+	return err
 }

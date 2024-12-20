@@ -1,14 +1,23 @@
-package api
+package controllers 
 
 import (
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgtype"
 	db "github.com/patrickchap/clipsapi/db/sqlc"
+	"github.com/patrickchap/clipsapi/util"
 )
 
+type CommentController struct {
+	store db.Store
+}
+
+func NewCommentController(s db.Store) *CommentController {
+    return &CommentController{
+        store: s,
+    }
+}
 type getVideoCommentsReq struct {
 	VideoID int64 `uri:"video_id" binding:"required"`
 }
@@ -16,17 +25,17 @@ type getVideoCommentsForm struct {
 	Limit	int64 `form:"limit" binding:"required"`
 	Offset	int64 `form:"offset"`
 }
-func (server *Server) getVideoComments(ctx *gin.Context){
+func (comment *CommentController) GetVideoComments(ctx *gin.Context){
 	var req getVideoCommentsReq
 	var reqForm getVideoCommentsForm
 
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return 
 	}
 
 	if err := ctx.ShouldBindQuery(&reqForm); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return 
 	}
 
@@ -36,9 +45,9 @@ func (server *Server) getVideoComments(ctx *gin.Context){
 		Offset: (reqForm.Limit - 1) * reqForm.Offset,
 	}
 
-	comments, err := server.store.GetCommentsByVideo(ctx, arg)
+	comments, err := comment.store.GetCommentsByVideo(ctx, arg)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return
 	}
 
@@ -53,28 +62,28 @@ type addVideoCommentsReqForm struct {
 	Content string `form:"video_id" binding:"required"`
 }
 
-func (server *Server) addVideoComments(ctx *gin.Context){
+func (comment *CommentController) AddVideoComments(ctx *gin.Context){
 	var req addVideoCommentsReq
 	var reqForm addVideoCommentsReqForm
 
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return 
 	}
 
 	if err := ctx.ShouldBindJSON(&reqForm); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return 
 	}
 
-	video, err := server.store.GetVideo(ctx, req.VideoID)
+	video, err := comment.store.GetVideo(ctx, req.VideoID)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return
 	}
 
 
-	if !validateClaims(ctx, video.UserID){
+	if !util.ValidateClaims(ctx, video.UserID){
 		return
 	}
 
@@ -84,9 +93,9 @@ func (server *Server) addVideoComments(ctx *gin.Context){
 		Content: reqForm.Content,
 	}
 
-	comments, err := server.store.CreateComment(ctx, arg)
+	comments, err := comment.store.CreateComment(ctx, arg)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return
 	}
 
@@ -94,19 +103,19 @@ func (server *Server) addVideoComments(ctx *gin.Context){
 }
 
 type deleteVideoCommentsReq struct {
-	VideoID	   pgtype.Int8	`uri:"video_id" binding:"required"`
+	VideoID int64 `uri:"video_id" binding:"required"`
 }
 
-func (server *Server) deleteVideoComments(ctx *gin.Context){
+func (comment *CommentController) DeleteVideoComments(ctx *gin.Context){
 	var req addVideoCommentsReq
 
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return 
 	}
 
-	if err := server.store.DeleteCommentsByVideo(ctx, req.VideoID); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+	if err := comment.store.DeleteCommentsByVideo(ctx, req.VideoID); err != nil {
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return 
 	}
 

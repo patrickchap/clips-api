@@ -9,6 +9,8 @@ migrateup:
 	migrate -path db/migrations/ -database "postgresql://root:secret@localhost:5432/clips?sslmode=disable" -verbose up
 migratedown:
 	migrate -path db/migrations/ -database "postgresql://root:secret@localhost:5432/clips?sslmode=disable" -verbose down
+apitests:
+	go test -v -cover ./test/...
 tests:
 	go test -v -cover ./...
 sqlc:
@@ -18,4 +20,4 @@ server:
 mockdb:
 	mockgen -package mockdb  -destination db/mock/store.go github.com/patrickchap/clipsapi/db/sqlc Store
 
-.PHONY: postgres createdb dropdb migrateup migratedown server sqlc tests mockdb
+.PHONY: postgres createdb dropdb migrateup migratedown server sqlc tests mockdb apitests

@@ -1,11 +1,22 @@
-package api
+package controllers
 
 import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	db "github.com/patrickchap/clipsapi/db/sqlc"
+	"github.com/patrickchap/clipsapi/util"
 )
+
+type UserController struct {
+	store db.Store
+}
+
+func NewUserController(s db.Store) *UserController {
+    return &UserController{
+        store: s,
+    }
+}
 
 type AddUserParams struct {
 	Username    string `json:"username" binding:"required"`
@@ -17,11 +28,12 @@ type UserResponse struct {
 	Username    string `form:"username"`
 	Email       string `form:"email"`
 }
-func (server *Server) addUser(ctx *gin.Context){
+
+func (userController *UserController) AddUser(ctx *gin.Context){
 	var req AddUserParams
 
 	err := ctx.ShouldBindJSON(&req); if err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return
 	}
 
@@ -31,10 +43,10 @@ func (server *Server) addUser(ctx *gin.Context){
 		Auth0UserID: req.Auth0UserID,
 	}
 
-	user, err := server.store.CreateUser(ctx, arg)
+	user, err := userController.store.CreateUser(ctx, arg)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		ctx.JSON(http.StatusInternalServerError, util.ErrorResponse(err))
 		return
 	}
 

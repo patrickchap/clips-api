@@ -10,8 +10,7 @@ import (
 	"github.com/patrickchap/clipsapi/util"
 )
 
-
-func main(){
+func main() {
 	config, err := util.LoadConfig(".")
 	if err != nil {
 		log.Fatal("Cannot load config:", err)
@@ -29,8 +28,5 @@ func main(){
 	if err != nil {
 		log.Fatal("connot start server", err)
 	}
-
-
-
 
 }

@@ -1,16 +1,27 @@
-package api
+package controllers
 
 import (
 	"fmt"
 	"mime/multipart"
-	"net/http"
 
+	"net/http"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/gin-gonic/gin"
+	"github.com/patrickchap/clipsapi/util"
 	db "github.com/patrickchap/clipsapi/db/sqlc"
 )
+
+type VideoController struct {
+	store db.Store
+}
+
+func NewVideoController(s db.Store) *VideoController {
+    return &VideoController{
+        store: s,
+    }
+}
 
 type getVideoListParams struct {
 	Limit  int64 `form:"limit" binding:"required,min=1"`
@@ -18,11 +29,11 @@ type getVideoListParams struct {
 	Search string `form:"search"`
 }
 
-func (server *Server) getListVideo(ctx *gin.Context){
+func (server *VideoController) GetListVideo(ctx *gin.Context){
 	var req getVideoListParams
 
 	if err := ctx.ShouldBindQuery(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return
 	}
 
@@ -43,7 +54,7 @@ func (server *Server) getListVideo(ctx *gin.Context){
 	
 	video, err := server.store.ListVideosWithLikesAndSearch(ctx, arg)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		ctx.JSON(http.StatusInternalServerError, util.ErrorResponse(err))
 		return
 	}
 	ctx.JSON(http.StatusOK, video)
@@ -59,19 +70,19 @@ type getUserVideoListUriIdParams struct {
     UserID string `uri:"user_id" binding:"required"`
 }
 
-func (server *Server) getUserVideoList(ctx *gin.Context){
+func (server *VideoController) GetUserVideoList(ctx *gin.Context){
 	var req getUserVideoListUriIdParams
 	var reqForm getUserVideoListFormParams 
 
 	// Bind URI parameters
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return
 	}
 
 	// Bind query parameters
 	if err := ctx.ShouldBindQuery(&reqForm); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return
 	}
 
@@ -83,7 +94,7 @@ func (server *Server) getUserVideoList(ctx *gin.Context){
 
 	videos, err := server.store.GetUserVideoWithLikes(ctx, arg)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		ctx.JSON(http.StatusInternalServerError, util.ErrorResponse(err))
 		return
 	}
 
@@ -96,18 +107,18 @@ type getVideoParams struct {
 	ID int64 `uri:"id" binding:"required"`
 }
 
-func (server *Server) getVideo(ctx *gin.Context){
+func (server *VideoController) GetVideo(ctx *gin.Context){
 	var req getVideoParams
 
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return
 	}
 
 	
 	video, err := server.store.GetVideoWithLikes(ctx, req.ID)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		ctx.JSON(http.StatusInternalServerError, util.ErrorResponse(err))
 		return
 	}
 	ctx.JSON(http.StatusOK, video)
@@ -123,26 +134,26 @@ type updateVideoFormParams struct {
     Description string `form:"description"`
 }
 
-func (server *Server) updateVideo(ctx *gin.Context){
+func (server *VideoController) UpdateVideo(ctx *gin.Context){
 	var reqUri updateVideoUriParams
 	var reqForm updateVideoFormParams
 
 	if err := ctx.ShouldBindUri(&reqUri); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return
 	}
 	if err := ctx.ShouldBindJSON(&reqForm); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return
 	}
 
 	video, err := server.store.GetVideo(ctx, reqUri.Id)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return
 	}
 
-	if !validateClaims(ctx, video.UserID){
+	if !util.ValidateClaims(ctx, video.UserID){
 		return
 	}
 
@@ -154,8 +165,8 @@ func (server *Server) updateVideo(ctx *gin.Context){
 
 
 	if err := server.store.UpdateVideo(ctx, arg); err != nil {
-		fmt.Printf("UpdateVideo error: %v\n", err)
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return
 	}
 
@@ -176,7 +187,7 @@ type createVideoParams struct {
 	UserID      string                  `form:"userId" binding:"required"`
 }
 
-func (server *Server) createVideo(ctx *gin.Context){
+func (server *VideoController) CreateVideo(ctx *gin.Context){
 	var req createVideoParams
 
 	const (
@@ -185,7 +196,7 @@ func (server *Server) createVideo(ctx *gin.Context){
 	)
 
 	if err := ctx.ShouldBind(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return
 	}
 
@@ -197,7 +208,7 @@ func (server *Server) createVideo(ctx *gin.Context){
 	defer close(thumbnailResultsChan)
 
 	go func() {
-		result, err := uploadFileToS3(req.File, s3BucketName, s3Region)
+		result, err := UploadFileToS3(req.File, s3BucketName, s3Region)
 		if err != nil {
 		    videoResultsChan <- uploadResult{err: err}
 		    return
@@ -206,7 +217,7 @@ func (server *Server) createVideo(ctx *gin.Context){
 	}()
 
 	go func() {
-		result, err := uploadFileToS3(req.Thumbnail, s3BucketName, s3Region)
+		result, err := UploadFileToS3(req.Thumbnail, s3BucketName, s3Region)
 		if err != nil {
 		    thumbnailResultsChan <- uploadResult{err: err}
 		    return
@@ -219,7 +230,7 @@ func (server *Server) createVideo(ctx *gin.Context){
 
 
 	if videoResult.err != nil || thumbnailResult.err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("Error uploading to s3")))
+		ctx.JSON(http.StatusInternalServerError, util.ErrorResponse(fmt.Errorf("Error uploading to s3")))
 		return
 	}
 
@@ -238,15 +249,23 @@ func (server *Server) createVideo(ctx *gin.Context){
 
 	video, err := server.store.CreateVideo(ctx, arg)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return
 	}
 	ctx.JSON(http.StatusOK, video)
 	
 }
 
+func UploadFileToS3Async(file *multipart.FileHeader,  resultsChan chan <- uploadResult){
+	const (
+		s3BucketName = "clips-bucket-prch"
+		s3Region = "us-west-2"
+	)
+	result, err := UploadFileToS3(file, s3BucketName, s3Region)
+	resultsChan <- uploadResult{result: result, err: err}
+}
 
-func uploadFileToS3(req *multipart.FileHeader, bucketName string, region string) (*s3manager.UploadOutput, error) {
+func UploadFileToS3(req *multipart.FileHeader, bucketName string, region string) (*s3manager.UploadOutput, error) {
 	file, err := req.Open()
 	if err != nil {
 		return nil, fmt.Errorf("Open failed: %v", err)
@@ -273,6 +292,7 @@ func uploadFileToS3(req *multipart.FileHeader, bucketName string, region string)
 
 	return result, nil 
 }
+
 
 
 

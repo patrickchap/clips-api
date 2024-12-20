@@ -7,6 +7,7 @@ import (
 	"github.com/auth0-community/go-auth0"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/patrickchap/clipsapi/api/controllers"
 	db "github.com/patrickchap/clipsapi/db/sqlc"
 	"github.com/patrickchap/clipsapi/util"
 	jose "gopkg.in/square/go-jose.v2"
@@ -14,7 +15,7 @@ import (
 
 type Server struct {
 	store db.Store
-	router *gin.Engine
+	Router *gin.Engine
 }
 
 var (
@@ -42,22 +43,27 @@ func NewServer(store db.Store) *Server {
 	router.Use(cors.New(config))
 
 
+	//controllers
+	commentController := controllers.NewCommentController(store)
+	videoController := controllers.NewVideoController(store)
+	userController := controllers.NewUserController(store)
+
 	v1 := router.Group("/api/v1")
 	{
 		/* VIDEOS */
-		v1.GET("/video/:id", server.getVideo)
-		v1.GET("/video",server.getListVideo)
-		v1.GET("/video/user/:user_id", server.getUserVideoList)
-		v1.POST("/video", authRequired(), server.createVideo)
-		v1.PUT("/video/:id", authRequired(), server.updateVideo)
+		v1.GET("/video/:id", videoController.GetVideo)
+		v1.GET("/video",videoController.GetListVideo)
+		v1.GET("/video/user/:user_id", videoController.GetUserVideoList)
+		v1.POST("/video", authRequired(), videoController.CreateVideo)
+		v1.PUT("/video/:id", authRequired(), videoController.UpdateVideo)
 
 		/* USER */
-		v1.POST("/user", server.addUser)
+		v1.POST("/user", userController.AddUser)
 
 		/* COMMENTS */
-		v1.GET("/videos/:video_id/comments", server.getVideoComments)
-		v1.POST("/videos/:video_id/comments", authRequired(), server.addVideoComments)
-		v1.DELETE("/videos/:video_id/comments/:comment_id", server.deleteVideoComments)
+		v1.GET("/videos/:video_id/comments", commentController.GetVideoComments)
+		v1.POST("/videos/:video_id/comments", authRequired(), commentController.AddVideoComments)
+		v1.DELETE("/videos/:video_id/comments/:comment_id", commentController.DeleteVideoComments)
 /* 		v1.PUT("/videos/:video_id/comments/:comment_id", server.) */
 
 		/* LIKES */
@@ -67,16 +73,16 @@ func NewServer(store db.Store) *Server {
 		v1.DELETE("/videos/:video_id/likes/:like_id", server.) */
 	}
 
-	server.router = router 
+	server.Router = router 
 	return server
 }
 
 func (server *Server) Start(address string) error {
-	return server.router.Run(address)
+	return server.Router.Run(address)
 }
 
 
-func validateClaims(ctx *gin.Context, userID string) bool {
+func ValidateClaims(ctx *gin.Context, userID string) bool {
 	claims, exists := ctx.Get("claims")
 	if !exists {
 		ctx.JSON(http.StatusForbidden, "Claims not found in context")
@@ -138,6 +144,10 @@ func authRequired() gin.HandlerFunc {
 func terminateWithError(statusCode int, message string, c *gin.Context) {
     c.JSON(statusCode, gin.H{"error": message})
     c.Abort()
+}
+
+func ErrorResponse(err error) gin.H {
+	return gin.H{"error": err.Error()}
 }
 
 func errorResponse(err error) gin.H {

@@ -1,4 +1,4 @@
-package api
+package test
 
 import (
 	"bytes"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/patrickchap/clipsapi/api"
 	mockdb "github.com/patrickchap/clipsapi/db/mock"
 	db "github.com/patrickchap/clipsapi/db/sqlc"
 	"github.com/patrickchap/clipsapi/util"
@@ -59,14 +60,14 @@ func TestGetVideoAPI(t *testing.T){
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
-			server := NewServer(store) 
+			server := api.NewServer(store) 
 			recorder := httptest.NewRecorder()
 
 			url := fmt.Sprintf("/api/v1/video/%v", tc.videoID)
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 			require.NoError(t, err)
 
-			server.router.ServeHTTP(recorder, request)
+			server.Router.ServeHTTP(recorder, request)
 			tc.checkResponse(t, recorder)
 		})
 
